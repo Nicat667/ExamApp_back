@@ -1,0 +1,57 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.4.2' // UPGRADED to latest stable
+    id 'io.spring.dependency-management' version '1.1.7' // UPGRADED for Gradle 8+ support
+}
+
+group = 'org.example'
+version = '0.0.1-SNAPSHOT'
+description = 'examination-app'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21) // Matches your Java 21 installation
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // 1. Spring Boot Starters
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+    // 2. Database & Migration
+    implementation 'org.liquibase:liquibase-core'
+    runtimeOnly 'org.postgresql:postgresql'
+
+    // 3. AWS S3 (Compatible with Spring Boot 3.x)
+    implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3:3.2.0'
+
+    // 4. JWT (JSON Web Token)
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+
+    // 5. PDF Processing
+    implementation 'org.apache.pdfbox:pdfbox:2.0.29'
+
+    // 6. Tools
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    // 7. Testing
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}

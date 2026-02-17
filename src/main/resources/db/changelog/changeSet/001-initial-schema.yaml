@@ -1,0 +1,217 @@
+databaseChangeLog:
+  # 1. Users Table
+  - changeSet:
+      id: 1
+      author: nijat
+      changes:
+        - createTable:
+            tableName: _user
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: full_name
+                  type: VARCHAR(255)
+              - column:
+                  name: email
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: password
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: enabled
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+
+  # 2. Confirmation Token Table
+  - changeSet:
+      id: 2
+      author: nijat
+      changes:
+        - createTable:
+            tableName: confirmation_token
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: token
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: expires_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: confirmed_at
+                  type: TIMESTAMP
+              - column:
+                  name: user_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_token_user
+                    references: _user(id)
+
+  # 3. Exam Table
+  - changeSet:
+      id: 3
+      author: nijat
+      changes:
+        - createTable:
+            tableName: exam
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: title
+                  type: VARCHAR(255)
+              - column:
+                  name: subject_code
+                  type: VARCHAR(50)
+
+  - changeSet:
+      id: 4
+      author: nijat
+      changes:
+        - createTable:
+            tableName: user_roles
+            columns:
+              - column:
+                  name: user_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_user_roles_user
+                    references: _user(id)
+              - column:
+                  name: role
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+
+  # 4. Question Table
+  - changeSet:
+      id: 5
+      author: nijat
+      changes:
+        - createTable:
+            tableName: question
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: text_content
+                  type: TEXT
+              - column:
+                  name: image_url
+                  type: VARCHAR(500)
+              - column:
+                  name: exam_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_question_exam
+                    references: exam(id)
+
+  # 5. Options Table
+  - changeSet:
+      id: 6
+      author: nijat
+      changes:
+        - createTable:
+            tableName: exam_options # Avoid 'option' reserved keyword
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: text_content
+                  type: VARCHAR(500)
+              - column:
+                  name: image_url
+                  type: VARCHAR(500)
+              - column:
+                  name: is_correct
+                  type: BOOLEAN
+                  constraints:
+                    nullable: false
+              - column:
+                  name: question_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_option_question
+                    references: question(id)
+
+  # 6. Exam Result Table
+  - changeSet:
+      id: 7
+      author: nijat
+      changes:
+        - createTable:
+            tableName: exam_result
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: score
+                  type: INT
+              - column:
+                  name: total_questions
+                  type: INT
+              - column:
+                  name: correct_answers
+                  type: INT
+              - column:
+                  name: submitted_at
+                  type: TIMESTAMP
+              - column:
+                  name: user_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_result_user
+                    references: _user(id)
+              - column:
+                  name: exam_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_result_exam
+                    references: exam(id)
