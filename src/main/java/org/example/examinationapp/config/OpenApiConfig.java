@@ -14,7 +14,7 @@ public class OpenApiConfig {
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("Examination App API")
+                        .title("Examination App")
                         .version("1.0")
                         .description("API documentation for the Online Examination System"))
                 // This part adds the "Authorize" button to Swagger so you can paste your JWT token
