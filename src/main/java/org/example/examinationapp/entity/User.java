@@ -40,7 +40,7 @@ public class User implements UserDetails {
             joinColumns = @JoinColumn(name = "user_id")
     )
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "role",nullable = false)
     private List<Role> roles;
 
     @Column(unique = true, nullable = false)
