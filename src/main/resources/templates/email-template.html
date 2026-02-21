@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Confirm Your Account</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f9fafb;">
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb; border-radius: 12px; border: 1px solid #f3f4f6;">
+    <div style="text-align: center; margin-bottom: 20px;">
+        <h1 style="color: #064e3b; margin: 0; font-size: 28px;">🎓 ExamPortal</h1>
+    </div>
+    <div style="background-color: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        <h2 style="color: #1f2937; margin-top: 0;">Welcome, <span th:text="${name}">Student</span>!</h2>
+
+        <p style="color: #4b5563; font-size: 16px; line-height: 1.5;">
+            Thank you for joining ExamPortal. We are excited to have you on board. Please verify your email address to activate your account and start using the platform.
+        </p>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <a th:href="${link}" style="background-color: #059669; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block;">
+                Verify Email Address
+            </a>
+        </div>
+
+        <!--<p style="color: #6b7280; font-size: 14px; margin-bottom: 0;">
+            If the button doesn't work, you can copy and paste this link into your browser:
+            <br>
+            <a th:href="${link}" th:text="${link}" style="color: #059669; word-break: break-all;">fallback-link</a>
+        </p>-->
+    </div>
+    <div style="text-align: center; margin-top: 20px; color: #9ca3af; font-size: 12px;">
+        <p>&copy; 2026 ExamPortal. All rights reserved.</p>
+    </div>
+</div>
+</body>
+</html>

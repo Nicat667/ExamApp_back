@@ -58,10 +58,13 @@ public class AuthService {
         tokenRepository.save(confirmationToken);
 
         String link = "http://localhost:8080/api/auth/confirm?token=" + token;
+
+        // Pass the raw data to EmailService, and let Thymeleaf handle the HTML!
         emailService.sendEmail(
                 request.getEmail(),
-                "Confirm your Account",
-                "Click here to activate your account: " + link
+                "Confirm your ExamPortal Account",
+                user.getFullName(), // Passes the user's name to the template
+                link                // Passes the link to the template
         );
 
         return AuthResponse.builder()
