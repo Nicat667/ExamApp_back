@@ -74,6 +74,7 @@ public class AuthService {
                 new UsernamePasswordAuthenticationToken(
                         request.getEmail(),
                         request.getPassword()
+
                 )
         );
 
@@ -85,6 +86,7 @@ public class AuthService {
         return AuthResponse.builder()
                 .token(jwtToken)
                 .message("Login successful")
+                .fullName(user.getFullName())
                 .build();
     }
 
