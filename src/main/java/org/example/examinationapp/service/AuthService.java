@@ -43,7 +43,7 @@ public class AuthService {
         user.setFullName(request.getFullName());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRoles(List.of(Role.User)); // Ensure Role Enum is imported
+        user.setRoles(List.of(Role.Student)); // Ensure Role Enum is imported
         user.setEnabled(false);
 
         var savedUser = userRepository.save(user);
@@ -90,6 +90,7 @@ public class AuthService {
                 .token(jwtToken)
                 .message("Login successful")
                 .fullName(user.getFullName())
+                .role(user.getRoles().getFirst().name())
                 .build();
     }
 
