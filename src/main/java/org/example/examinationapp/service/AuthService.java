@@ -1,35 +1,38 @@
 package org.example.examinationapp.service;
 
 import lombok.RequiredArgsConstructor;
-import org.example.examinationapp.dto.AuthResponse;
-import org.example.examinationapp.dto.LoginRequest;
-import org.example.examinationapp.dto.RegisterRequest;
-import org.example.examinationapp.entity.ConfirmationToken;
+import org.example.examinationapp.dto.*;
+import org.example.examinationapp.entity.Otp;
 import org.example.examinationapp.entity.User;
-import org.example.examinationapp.enums.Role;
-import org.example.examinationapp.repository.TokenRepository;
+import org.example.examinationapp.entity.Role;
+import org.example.examinationapp.repository.OtpRepository;
 import org.example.examinationapp.repository.UserRepository;
 import org.example.examinationapp.security.JwtService;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
     private final UserRepository userRepository;
-    private final TokenRepository tokenRepository;
+    private final OtpRepository otpRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final EmailService emailService;
 
+    private static final int OTP_EXPIRY_MINUTES = 3;
+
+    @Transactional
     public AuthResponse register(RegisterRequest request) {
         if (!request.getPassword().equals(request.getConfirmPassword())) {
             throw new RuntimeException("Passwords do not match");
@@ -39,36 +42,91 @@ public class AuthService {
             throw new RuntimeException("Email already taken");
         }
 
-        var user = new User();
-        user.setFullName(request.getFullName());
-        user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRoles(List.of(Role.Student)); // Ensure Role Enum is imported
-        user.setEnabled(false);
+        User user = User.builder()
+                .fullName(request.getFullName())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .roles(List.of(request.getRole()))
+                .enabled(false)
+                .build();
 
-        var savedUser = userRepository.save(user);
+        User savedUser = userRepository.save(user);
 
-        String token = UUID.randomUUID().toString();
-        ConfirmationToken confirmationToken = new ConfirmationToken();
-        confirmationToken.setToken(token);
-        confirmationToken.setExpiresAt(LocalDateTime.now().plusMinutes(15));
-        confirmationToken.setConfirmedAt(null);
-        confirmationToken.setUser(savedUser);
+        // Delete any previous OTPs for this user before creating a new one
+        otpRepository.deleteAllByUserEmail(savedUser.getEmail());
 
-        tokenRepository.save(confirmationToken);
+        String code = generateOtpCode();
 
-        String link = "http://localhost:8080/api/auth/confirm?token=" + token;
+        Otp otp = Otp.builder()
+                .code(code)
+                .issuedAt(LocalDateTime.now())
+                .expiresAt(LocalDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES))
+                .used(false)
+                .user(savedUser)
+                .build();
 
-        // Pass the raw data to EmailService, and let Thymeleaf handle the HTML!
-        emailService.sendEmail(
-                request.getEmail(),
-                "Confirm your ExamPortal Account",
-                user.getFullName(), // Passes the user's name to the template
-                link                // Passes the link to the template
-        );
+        otpRepository.save(otp);
+
+        emailService.sendOtpEmail(savedUser.getEmail(), savedUser.getFullName(), code);
 
         return AuthResponse.builder()
-                .message("Registration successful. Check your email to confirm.")
+                .message("Registration successful. A verification code has been sent to your email.")
+                .build();
+    }
+
+    @Transactional
+    public AuthResponse verifyOtp(OtpVerifyRequest request) {
+        Otp otp = otpRepository
+                .findTopByUserEmailAndCodeAndUsedFalseOrderByIssuedAtDesc(
+                        request.getEmail(), request.getCode()
+                )
+                .orElseThrow(() -> new RuntimeException("Invalid or expired OTP code"));
+
+        if (otp.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("OTP code has expired. Please register again to get a new code.");
+        }
+
+        // Mark OTP as used
+        otp.setUsed(true);
+        otpRepository.save(otp);
+
+        // Enable the user
+        User user = otp.getUser();
+        user.setEnabled(true);
+        userRepository.save(user);
+
+        return AuthResponse.builder()
+                .message("Email verified successfully. You can now log in.")
+                .build();
+    }
+
+    @Transactional
+    public AuthResponse resendOtp(ResendOtp request) {
+        User user = userRepository.findByEmail(request.getEmail()).orElseThrow( () -> new RuntimeException("User not found!"));
+
+        if (!user.isEnabled()) {
+            otpRepository.deleteAllByUserEmail(user.getEmail());
+
+            String code = generateOtpCode();
+
+            Otp otp = Otp.builder()
+                    .code(code)
+                    .issuedAt(LocalDateTime.now())
+                    .expiresAt(LocalDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES))
+                    .used(false)
+                    .user(user)
+                    .build();
+
+            otpRepository.save(otp);
+
+            emailService.sendOtpEmail(user.getEmail(), user.getFullName(), code);
+        }
+        else{
+            throw new RuntimeException("User is already enabled");
+        }
+
+        return AuthResponse.builder()
+                .message("A new verification code has been sent to your email.")
                 .build();
     }
 
@@ -77,14 +135,13 @@ public class AuthService {
                 new UsernamePasswordAuthenticationToken(
                         request.getEmail(),
                         request.getPassword()
-
                 )
         );
 
-        var user = userRepository.findByEmail(request.getEmail())
+        User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        var jwtToken = jwtService.generateToken(user);
+        String jwtToken = jwtService.generateToken(user);
 
         return AuthResponse.builder()
                 .token(jwtToken)
@@ -94,25 +151,9 @@ public class AuthService {
                 .build();
     }
 
-    public String confirmToken(String token) {
-        ConfirmationToken confirmationToken = tokenRepository.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("Token not found"));
-
-        if (confirmationToken.getConfirmedAt() != null) {
-            return "Email already confirmed";
-        }
-
-        if (confirmationToken.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Token expired");
-        }
-
-        confirmationToken.setConfirmedAt(LocalDateTime.now());
-        tokenRepository.save(confirmationToken);
-
-        User user = confirmationToken.getUser();
-        user.setEnabled(true);
-        userRepository.save(user);
-
-        return "Email confirmed successfully";
+    private String generateOtpCode() {
+        SecureRandom random = new SecureRandom();
+        int code = 100000 + random.nextInt(900000); // always 6 digits
+        return String.valueOf(code);
     }
 }

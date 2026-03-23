@@ -4,16 +4,12 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.example.examinationapp.entity.Role;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class RegisterRequest {
+public class OtpVerifyRequest {
     private String email;
-    private String password;
-    private String confirmPassword;
-    private String fullName;
-    private Role role;
+    private String code;
 }

@@ -1,0 +1,65 @@
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: examination-postgres
+    environment:
+      POSTGRES_DB:       ${DB_NAME:-exam_db}
+      POSTGRES_USER:     ${DB_USERNAME:-nijat}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-Nicat2006$}
+    ports:
+      # Host 5433 → container 5432.
+      # Your local Postgres is already on 5432, so this avoids the conflict.
+      # You can still connect with IntelliJ DB tool on port 5433.
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-nijat} -d ${DB_NAME:-exam_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: examination-redis
+    ports:
+      # Host 6380 → container 6379.
+      # Your local Redis is already on 6379, so this avoids the conflict.
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: examination-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    env_file:
+      - .env
+    environment:
+      # Inside Docker network, containers talk to each other by service name.
+      # "postgres" and "redis" here are the service names defined above.
+      # They always use the internal port (5432 / 6379), not the host ports.
+      DB_HOST: postgres
+      DB_PORT: 5432
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    healthcheck: # ← add this
+      test: [ "CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
