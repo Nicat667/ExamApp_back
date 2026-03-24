@@ -31,10 +31,10 @@ spring:
       max-request-size: 20MB
 
   mail:
-    host: smtp.gmail.com
+    host: smtp.resend.com
     port: 587
-    username: ${GMAIL_USERNAME:}
-    password: ${GMAIL_APP_PASSWORD:}
+    username: resend
+    password: ${RESEND_API_KEY}
     properties:
       mail:
         smtp:
@@ -45,8 +45,8 @@ spring:
   cloud:
     aws:
       credentials:
-        access-key: ${AWS_ACCESS_KEY:}
-        secret-key: ${AWS_SECRET_KEY:}
+        access-key: ${AWS_ACCESS_KEY}
+        secret-key: ${AWS_SECRET_KEY}
       region:
         static: us-east-1
       s3:
@@ -58,6 +58,8 @@ server:
 application:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  mail:
+    from: ${MAIL_FROM:noreply@examportal.uk}
   security:
     jwt:
       secret-key: ${JWT_SECRET_KEY}

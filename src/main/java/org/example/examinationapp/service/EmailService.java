@@ -1,14 +1,15 @@
-package org.example.examinationapp.service;
+package org.example.examinationapp.service;  // ← was missing
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
-import org.thymeleaf.context.Context; // WARNING: Make sure you import this exact Context, not the javax.naming one!
+import org.thymeleaf.context.Context;
 
 @Service
 @RequiredArgsConstructor
@@ -16,6 +17,9 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
+
+    @Value("${application.mail.from}")
+    private String fromAddress;
 
     @Async
     public void sendOtpEmail(String to, String name, String otpCode) {
@@ -29,6 +33,7 @@ public class EmailService {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
+            helper.setFrom(fromAddress);
             helper.setTo(to);
             helper.setSubject("Your ExamPortal Verification Code");
             helper.setText(htmlBody, true);
